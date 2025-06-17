@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sopa de Letras - Prevención de Sustancias</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            touch-action: pan-y;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-size: 1.5rem;
+        }
+        
+        .game-area {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            h1 {
+                font-size: 1.2rem;
+                margin-bottom: 15px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            body {
+                padding: 5px;
+            }
+        }
+        
+        .grid-container {
+            display: inline-block;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            touch-action: none;
+        }
+        
+        .cell {
+            width: 30px;
+            height: 30px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            border-radius: 3px;
+            transition: all 0.2s;
+            user-select: none;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        @media (max-width: 768px) {
+            .cell {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .cell {
+                width: 25px;
+                height: 25px;
+                font-size: 11px;
+            }
+        }
+        
+        .cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .cell.selecting {
+            background: #2196F3;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .cell.found-word-0 {
+            background: #4CAF50;
+            color: white;
+            border: 2px solid #2E7D32;
+        }
+        
+        .cell.found-word-1 {
+            background: #FF9800;
+            color: white;
+            border: 2px solid #E65100;
+        }
+        
+        .cell.found-word-2 {
+            background: #9C27B0;
+            color: white;
+            border: 2px solid #4A148C;
+        }
+        
+        .cell.found-word-3 {
+            background: #F44336;
+            color: white;
+            border: 2px solid #B71C1C;
+        }
+        
+        .cell.found-word-4 {
+            background: #00BCD4;
+            color: white;
+            border: 2px solid #006064;
+        }
+        
+        .cell.wrong {
+            background: #f44336;
+            color: white;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 20%, 40%, 60%, 80% { transform: translateX(-2px); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(2px); }
+        }
+        
+        .words-list {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 180px;
+            max-width: 250px;
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .words-list {
+                max-width: 350px;
+                padding: 10px;
+            }
+        }
+        
+        .words-list h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #FFD700;
+        }
+        
+        .word-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .word-item.found {
+            background: #4CAF50;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 215, 0, 0.9);
+            color: #333;
+            display: none;
+        }
+        
+        .instructions {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            opacity: 0.9;
+            padding: 0 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .instructions {
+                font-size: 12px;
+                margin-bottom: 10px;
+            }
+        }
+        
+        .restart-btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .restart-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Sopa de Letras - Prevención de Sustancias</h1>
+        <div class="instructions">
+            Encuentra las palabras relacionadas con la prevención del consumo de sustancias ocultas en alimentos
+        </div>
+        
+        <button class="restart-btn" onclick="restartGame()">🔄 Nueva Partida</button>
+        
+        <div class="game-area">
+            <div class="grid-container">
+                <div class="grid" id="grid"></div>
+            </div>
+            
+            <div class="words-list">
+                <h3>Palabras a encontrar:</h3>
+                <div class="word-item" id="word-RIESGO">RIESGO</div>
+                <div class="word-item" id="word-GALLETAS">GALLETAS</div>
+                <div class="word-item" id="word-DROGA">DROGA</div>
+                <div class="word-item" id="word-PREVENIR">PREVENIR</div>
+                <div class="word-item" id="word-SALUD">SALUD</div>
+            </div>
+        </div>
+        
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 10;
+        const WORDS = ['RIESGO', 'GALLETAS', 'DROGA', 'PREVENIR', 'SALUD'];
+        
+        let grid = [];
+        let wordPositions = {};
+        let selectedCells = [];
+        let foundWords = new Set();
+        let foundWordsColors = new Map();
+        let isSelecting = false;
+        let selectionStart = null;
+        
+        // Crear sonidos usando Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function createBeep(frequency, duration, type = 'sine') {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+        
+        function playSuccessSound() {
+            createBeep(523.25, 0.2); // C5
+            setTimeout(() => createBeep(659.25, 0.3), 100); // E5
+        }
+        
+        function playErrorSound() {
+            createBeep(220, 0.3, 'sawtooth'); // A3
+        }
+        
+        function playVictorySound() {
+            createBeep(523.25, 0.2);
+            setTimeout(() => createBeep(659.25, 0.2), 100);
+            setTimeout(() => createBeep(783.99, 0.2), 200);
+            setTimeout(() => createBeep(1046.50, 0.4), 300);
+        }
+        
+        function initializeGrid() {
+            grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(''));
+            
+            // Colocar palabras en el grid
+            WORDS.forEach(word => {
+                placeWord(word);
+            });
+            
+            // Llenar espacios vacíos con letras aleatorias
+            fillEmptySpaces();
+            
+            // Renderizar grid
+            renderGrid();
+        }
+        
+        function placeWord(word) {
+            let placed = false;
+            let attempts = 0;
+            
+            while (!placed && attempts < 100) {
+                const direction = Math.floor(Math.random() * 3); // 0: horizontal, 1: vertical, 2: diagonal
+                const row = Math.floor(Math.random() * GRID_SIZE);
+                const col = Math.floor(Math.random() * GRID_SIZE);
+                
+                if (canPlaceWord(word, row, col, direction)) {
+                    const positions = [];
+                    
+                    for (let i = 0; i < word.length; i++) {
+                        let newRow = row;
+                        let newCol = col;
+                        
+                        if (direction === 0) newCol += i; // horizontal
+                        else if (direction === 1) newRow += i; // vertical
+                        else { // diagonal
+                            newRow += i;
+                            newCol += i;
+                        }
+                        
+                        grid[newRow][newCol] = word[i];
+                        positions.push([newRow, newCol]);
+                    }
+                    
+                    wordPositions[word] = positions;
+                    placed = true;
+                }
+                attempts++;
+            }
+        }
+        
+        function canPlaceWord(word, row, col, direction) {
+            for (let i = 0; i < word.length; i++) {
+                let newRow = row;
+                let newCol = col;
+                
+                if (direction === 0) newCol += i;
+                else if (direction === 1) newRow += i;
+                else {
+                    newRow += i;
+                    newCol += i;
+                }
+                
+                if (newRow >= GRID_SIZE || newCol >= GRID_SIZE || 
+                    (grid[newRow][newCol] !== '' && grid[newRow][newCol] !== word[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        function fillEmptySpaces() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    if (grid[i][j] === '') {
+                        grid[i][j] = letters[Math.floor(Math.random() * letters.length)];
+                    }
+                }
+            }
+        }
+        
+        function renderGrid() {
+            const gridElement = document.getElementById('grid');
+            gridElement.innerHTML = '';
+            
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.textContent = grid[i][j];
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    
+                    cell.addEventListener('mousedown', startSelection);
+                    cell.addEventListener('mouseenter', continueSelection);
+                    cell.addEventListener('mouseup', endSelection);
+                    
+                    // Eventos táctiles para móviles
+                    cell.addEventListener('touchstart', handleTouchStart, { passive: false });
+                    cell.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    cell.addEventListener('touchend', handleTouchEnd, { passive: false });
+                    
+                    // Prevenir comportamiento de arrastrar
+                    cell.addEventListener('dragstart', e => e.preventDefault());
+                    
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+        
+        function startSelection(e) {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            e.preventDefault();
+            isSelecting = true;
+            selectedCells = [];
+            clearTemporarySelection();
+            
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+            selectionStart = [row, col];
+            
+            selectCell(e.target);
+        }
+        
+        function continueSelection(e) {
+            if (isSelecting && selectionStart) {
+                clearTemporarySelection();
+                
+                const endRow = parseInt(e.target.dataset.row);
+                const endCol = parseInt(e.target.dataset.col);
+                
+                const cells = getLineCells(selectionStart[0], selectionStart[1], endRow, endCol);
+                
+                selectedCells = cells;
+                cells.forEach(([row, col]) => {
+                    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                    if (cell && !cell.classList.contains('found-word-0') && 
+                        !cell.classList.contains('found-word-1') && 
+                        !cell.classList.contains('found-word-2') && 
+                        !cell.classList.contains('found-word-3') && 
+                        !cell.classList.contains('found-word-4')) {
+                        cell.classList.add('selecting');
+                    }
+                });
+            }
+        }
+        
+        function endSelection() {
+            if (isSelecting) {
+                checkSelection();
+                isSelecting = false;
+                selectionStart = null;
+            }
+        }
+        
+        function getLineCells(startRow, startCol, endRow, endCol) {
+            const cells = [];
+            const deltaRow = endRow - startRow;
+            const deltaCol = endCol - startCol;
+            
+            // Determinar si es una línea válida (horizontal, vertical o diagonal)
+            const absRow = Math.abs(deltaRow);
+            const absCol = Math.abs(deltaCol);
+            
+            if (deltaRow === 0 && deltaCol === 0) {
+                return [[startRow, startCol]];
+            }
+            
+            // Solo permitir líneas rectas (horizontal, vertical, diagonal)
+            if (deltaRow !== 0 && deltaCol !== 0 && absRow !== absCol) {
+                return [[startRow, startCol]];
+            }
+            
+            const steps = Math.max(absRow, absCol);
+            const stepRow = deltaRow === 0 ? 0 : deltaRow / steps;
+            const stepCol = deltaCol === 0 ? 0 : deltaCol / steps;
+            
+            for (let i = 0; i <= steps; i++) {
+                const row = startRow + Math.round(stepRow * i);
+                const col = startCol + Math.round(stepCol * i);
+                
+                if (row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE) {
+                    cells.push([row, col]);
+                }
+            }
+            
+            return cells;
+        }
+        
+        function selectCell(cell) {
+            if (!cell.classList.contains('found-word-0') && 
+                !cell.classList.contains('found-word-1') && 
+                !cell.classList.contains('found-word-2') && 
+                !cell.classList.contains('found-word-3') && 
+                !cell.classList.contains('found-word-4')) {
+                cell.classList.add('selecting');
+            }
+        }
+        
+        function clearTemporarySelection() {
+            document.querySelectorAll('.cell.selecting, .cell.wrong').forEach(cell => {
+                cell.classList.remove('selecting', 'wrong');
+            });
+        }
+        
+        function checkSelection() {
+            const selectedWord = selectedCells.map(([row, col]) => grid[row][col]).join('');
+            const reversedWord = selectedWord.split('').reverse().join('');
+            
+            let foundWord = null;
+            let wordIndex = -1;
+            
+            for (let i = 0; i < WORDS.length; i++) {
+                const word = WORDS[i];
+                if ((selectedWord === word || reversedWord === word) && !foundWords.has(word)) {
+                    if (isValidWordSelection(word)) {
+                        foundWord = word;
+                        wordIndex = i;
+                        break;
+                    }
+                }
+            }
+            
+            if (foundWord) {
+                playSuccessSound();
+                foundWords.add(foundWord);
+                foundWordsColors.set(foundWord, wordIndex);
+                markWordAsFound(foundWord, wordIndex);
+                
+                // Marcar las células con el color específico de la palabra
+                selectedCells.forEach(([row, col]) => {
+                    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                    cell.classList.remove('selecting');
+                    cell.classList.add(`found-word-${wordIndex}`);
+                });
+                
+                if (foundWords.size === WORDS.length) {
+                    setTimeout(() => {
+                        playVictorySound();
+                        showMessage('¡Felicidades! Has encontrado todas las palabras. ¡Excelente trabajo en la prevención!');
+                    }, 500);
+                }
+            } else {
+                playErrorSound();
+                selectedCells.forEach(([row, col]) => {
+                    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                    cell.classList.remove('selecting');
+                    cell.classList.add('wrong');
+                });
+                
+                setTimeout(clearTemporarySelection, 1000);
+            }
+        }
+        
+        function isValidWordSelection(word) {
+            const positions = wordPositions[word];
+            if (!positions) return false;
+            
+            return positions.every(([row, col]) => 
+                selectedCells.some(([selRow, selCol]) => selRow === row && selCol === col)
+            ) && positions.length === selectedCells.length;
+        }
+        
+        function markWordAsFound(word, wordIndex) {
+            const wordElement = document.getElementById(`word-${word}`);
+            wordElement.classList.add('found');
+            wordElement.style.background = getComputedStyle(document.documentElement).getPropertyValue(`--found-color-${wordIndex}`) || 
+                                          ['#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4'][wordIndex];
+        }
+        
+        function showMessage(text) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = text;
+            messageElement.style.display = 'block';
+        }
+        
+        function restartGame() {
+            // Limpiar variables de estado
+            grid = [];
+            wordPositions = {};
+            selectedCells = [];
+            foundWords = new Set();
+            foundWordsColors = new Map();
+            isSelecting = false;
+            selectionStart = null;
+            
+            // Limpiar mensaje
+            document.getElementById('message').style.display = 'none';
+            
+            // Limpiar lista de palabras
+            WORDS.forEach(word => {
+                const wordElement = document.getElementById(`word-${word}`);
+                wordElement.classList.remove('found');
+                wordElement.style.background = '';
+            });
+            
+            // Reinicializar el juego
+            initializeGrid();
+        }
+        
+        // Manejo de eventos táctiles para móviles
+        let touchStartTime = 0;
+        let isTouchSelecting = false;
+        
+        function handleTouchStart(e) {
+            touchStartTime = Date.now();
+            isTouchSelecting = false;
+            
+            // Solo prevenir si es una selección de juego
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('cell')) {
+                e.preventDefault();
+                e.stopPropagation();
+                isTouchSelecting = true;
+                
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                isSelecting = true;
+                selectedCells = [];
+                clearTemporarySelection();
+                
+                const row = parseInt(element.dataset.row);
+                const col = parseInt(element.dataset.col);
+                selectionStart = [row, col];
+                selectCell(element);
+            }
+        }
+        
+        function handleTouchMove(e) {
+            if (!isTouchSelecting || !isSelecting || !selectionStart) {
+                return; // Permitir scroll normal
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('cell')) {
+                clearTemporarySelection();
+                
+                const endRow = parseInt(element.dataset.row);
+                const endCol = parseInt(element.dataset.col);
+                
+                const cells = getLineCells(selectionStart[0], selectionStart[1], endRow, endCol);
+                
+                selectedCells = cells;
+                cells.forEach(([row, col]) => {
+                    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                    if (cell && !cell.classList.contains('found-word-0') && 
+                        !cell.classList.contains('found-word-1') && 
+                        !cell.classList.contains('found-word-2') && 
+                        !cell.classList.contains('found-word-3') && 
+                        !cell.classList.contains('found-word-4')) {
+                        cell.classList.add('selecting');
+                    }
+                });
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            if (isTouchSelecting && isSelecting) {
+                e.preventDefault();
+                e.stopPropagation();
+                checkSelection();
+            }
+            
+            isSelecting = false;
+            selectionStart = null;
+            isTouchSelecting = false;
+        }
+        
+        // Prevenir selección de texto y mejorar la precisión
+        document.addEventListener('selectstart', e => e.preventDefault());
+        document.addEventListener('dragstart', e => e.preventDefault());
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Permitir scroll vertical pero prevenir zoom en iOS
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        document.addEventListener('gesturechange', e => e.preventDefault());
+        document.addEventListener('gestureend', e => e.preventDefault());
+        
+        // Prevenir scroll horizontal accidental
+        document.addEventListener('touchmove', function(e) {
+            // Solo prevenir si NO estamos en el área del juego
+            if (!e.target.closest('.grid-container')) {
+                return; // Permitir scroll normal fuera del grid
+            }
+        }, { passive: true });
+        
+        // Inicializar juego
+        initializeGrid();
+    </script>
+</body>
+</html>
